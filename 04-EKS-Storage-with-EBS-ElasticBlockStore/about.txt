@@ -1,0 +1,38 @@
+Overall, these scripts work together to:
+
+Provision a persistent EBS volume for MySQL data.
+Deploy a MySQL container with a database named "usermgmt".
+Make the MySQL database accessible to other pods in the cluster.
+
+
+1. StorageClass (ebs-sc):
+
+Defines a storage class named "ebs-sc" for dynamically provisioning EBS volumes on AWS.
+Uses the ebs.csi.aws.com provisioner to interact with AWS EBS.
+Sets volumeBindingMode: WaitForFirstConsumer to delay volume creation until a pod using it is scheduled.
+
+2. PersistentVolumeClaim (ebs-mysql-pv-claim):
+
+Requests a persistent volume with 4Gi of storage using the "ebs-sc" storage class.
+Specifies ReadWriteOnce access mode, meaning the volume can be mounted as read-write by a single pod.
+
+3. ConfigMap (usermanagement-dbcreation-script):
+
+Stores SQL commands to create a database named "usermgmt".
+The commands are executed when the MySQL container starts.
+
+4. Deployment (mysql):
+
+Deploys a MySQL container using the image mysql:5.6.
+Sets the root password to "dbpassword11".
+Exposes port 3306 for MySQL connections.
+Mounts two volumes:
+mysql-persistent-storage: Persistent volume for MySQL data.
+usermanagement-dbcreation-script: ConfigMap with database creation script.
+Uses a "Recreate" strategy, meaning existing pods are deleted before creating new ones.
+
+5. Service (mysql):
+
+Creates a headless service for the MySQL deployment.
+Exposes the MySQL pods on port 3306 without a fixed IP address.
+Pods can be accessed directly using their individual IPs.
